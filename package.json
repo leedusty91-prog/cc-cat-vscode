@@ -1,8 +1,8 @@
 {
   "name": "cc-session-manager",
   "displayName": "Claude Code Session Manager",
-  "description": "Organize, tag, and manage Claude Code sessions with notes, favorites, search, and batch operations",
-  "version": "0.1.0",
+  "description": "Manage Claude Code sessions visually. Features: tag & categorize sessions, add notes, star favorites, search with highlight, sort, batch operations, auto-refresh on new sessions, and one-click access from the sidebar.",
+  "version": "0.2.0",
   "publisher": "ljx",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -24,8 +24,13 @@
     "claude",
     "claude-code",
     "session",
+    "session-manager",
     "category",
-    "tag"
+    "tag",
+    "notes",
+    "favorites",
+    "ai",
+    "anthropic"
   ],
   "main": "./extension.js",
   "contributes": {
