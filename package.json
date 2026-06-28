@@ -1,0 +1,40 @@
+{
+  "name": "cc-cat",
+  "displayName": "Claude Code 会话分类",
+  "description": "给 Claude Code 会话打标签、按分类可视化管理（不修改原始记录）",
+  "version": "0.1.0",
+  "publisher": "Jinxuan_Lee",
+  "license": "MIT",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leedusty91-prog/cc-cat-vscode.git"
+  },
+  "galleryBanner": {
+    "color": "#efe9dc",
+    "theme": "light"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "claude",
+    "claude-code",
+    "session",
+    "category",
+    "tag"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ccCat.open",
+        "title": "打开会话分类面板",
+        "category": "Claude Code"
+      }
+    ]
+  }
+}

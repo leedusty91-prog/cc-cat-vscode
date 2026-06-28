@@ -1,0 +1,728 @@
+:root {
+  /* Claude 暖珊瑚强调色 */
+  --accent: #d97757;
+  --accent-hover: #c96442;
+  --accent-soft: rgba(217, 119, 87, 0.14);
+  --accent-border: rgba(217, 119, 87, 0.4);
+  --gap: 12px;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--vscode-font-family);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--vscode-foreground);
+  background: var(--vscode-editor-background);
+}
+
+/* ---------- header ---------- */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  position: sticky;
+  top: 0;
+  background: var(--vscode-editor-background);
+  z-index: 3;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+.brand-icon {
+  flex-shrink: 0;
+  display: block;
+}
+
+#search {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+#search:focus {
+  border-color: var(--accent);
+}
+
+.scope {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.scope input {
+  accent-color: var(--accent);
+}
+
+/* ---------- layout ---------- */
+
+main {
+  display: flex;
+  align-items: flex-start;
+}
+
+#sidebar {
+  width: 188px;
+  flex-shrink: 0;
+  padding: 14px 10px;
+  border-right: 1px solid var(--vscode-panel-border);
+  position: sticky;
+  top: 61px;
+}
+
+/* ---------- 侧边栏分类项 ---------- */
+
+.cat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  margin-bottom: 2px;
+  border-radius: 6px;
+  border-left: 2px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease;
+  position: relative;
+}
+
+.cat-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.cat-item.active {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+  color: var(--vscode-foreground);
+  font-weight: 600;
+}
+
+.cat-item-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 已收藏项用珊瑚色前缀 */
+.cat-item-star .cat-item-label {
+  color: var(--accent);
+}
+
+.cat-count {
+  opacity: 0.55;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+/* 真实分类操作按钮（重命名/删除）*/
+.cat-ops {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.cat-item-real:hover .cat-ops {
+  display: flex;
+}
+
+/* hover 时稍微压缩 cat-count 让操作按钮显示 */
+.cat-item-real:hover .cat-count {
+  display: none;
+}
+
+.cat-op-btn {
+  padding: 1px 4px;
+  font-size: 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  opacity: 0.6;
+  line-height: 1.4;
+  font-family: inherit;
+  transition: background 0.1s ease, opacity 0.1s ease;
+}
+
+.cat-op-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+  opacity: 1;
+}
+
+.cat-op-del:hover {
+  background: rgba(220, 80, 70, 0.14);
+  color: #e06b5e;
+  opacity: 1;
+}
+
+/* 就地重命名输入框 */
+.cat-rename-input {
+  width: 100%;
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+}
+
+/* ---------- 排序工具条 ---------- */
+
+.sort-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0 4px;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.sort-label {
+  font-size: 11px;
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
+.sort-btn {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: background 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
+  white-space: nowrap;
+}
+
+.sort-btn:hover {
+  background: var(--vscode-list-hoverBackground);
+  opacity: 1;
+}
+
+.sort-btn.active {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+  font-weight: 600;
+  opacity: 1;
+}
+
+/* ---------- 批量操作条 ---------- */
+
+.batch-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 0 0 4px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border);
+  font-size: 12px;
+  position: sticky;
+  top: 61px;
+  z-index: 2;
+}
+
+.batch-info {
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.batch-add-tag {
+  position: relative;
+  display: inline-block;
+}
+
+.batch-add-tag input {
+  width: 110px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  border: 1px dashed var(--accent-border);
+  background: var(--vscode-input-background);
+  color: var(--vscode-foreground);
+  font-size: 11.5px;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.batch-add-tag input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+.batch-remove-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.batch-remove-label {
+  opacity: 0.7;
+  white-space: nowrap;
+}
+
+.batch-remove-btn {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--accent-border);
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.batch-remove-btn:hover {
+  background: var(--accent-soft);
+}
+
+.batch-clear-btn {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.1s ease;
+}
+
+.batch-clear-btn:hover {
+  opacity: 1;
+  background: var(--vscode-list-hoverBackground);
+}
+
+/* ---------- session cards ---------- */
+
+#list {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--vscode-editorWidget-background, transparent);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.card:hover {
+  border-color: var(--accent-border);
+}
+
+.card.selected {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+/* 选择复选框 —— 玻璃质感圆圈 */
+.select-label {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.select-cb {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid var(--accent-border);
+  /* 半透明渐变 + 内高光 = 玻璃感 */
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(255, 255, 255, 0.04)
+  );
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45),
+    0 1px 2px rgba(0, 0, 0, 0.14);
+  transition: background 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.select-cb:hover {
+  border-color: var(--accent);
+  transform: scale(1.08);
+}
+
+.select-cb:checked {
+  border-color: var(--accent);
+  /* 橙色玻璃球：左上高光 + 珊瑚渐变 */
+  background: radial-gradient(
+      circle at 34% 28%,
+      rgba(255, 255, 255, 0.6),
+      rgba(255, 255, 255, 0) 55%
+    ),
+    linear-gradient(135deg, var(--accent), var(--accent-hover));
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.55),
+    0 1px 4px rgba(217, 119, 87, 0.45);
+}
+
+/* 选中对勾 */
+.select-cb:checked::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 3.5px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.7px 1.7px 0;
+  transform: rotate(45deg);
+}
+
+/* 星标按钮 */
+.star-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  opacity: 0.35;
+  transition: opacity 0.1s ease, color 0.1s ease;
+  font-family: inherit;
+}
+
+.star-btn:hover {
+  opacity: 0.8;
+}
+
+.star-btn.starred {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.card-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-title:hover {
+  color: var(--accent);
+}
+
+.card-meta {
+  font-size: 11px;
+  opacity: 0.5;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.card-snippet {
+  margin: 6px 0 0;
+  font-size: 12px;
+  opacity: 0.62;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- 搜索高亮 ---------- */
+
+mark.hl {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-style: normal;
+  font-weight: inherit;
+}
+
+/* ---------- 备注区 ---------- */
+
+.note-wrap {
+  margin-top: 8px;
+}
+
+.note-add {
+  font-size: 11.5px;
+  opacity: 0.4;
+  cursor: pointer;
+  transition: opacity 0.1s ease;
+  user-select: none;
+}
+
+.note-add:hover {
+  opacity: 0.75;
+  color: var(--accent);
+}
+
+.note-text {
+  font-size: 12px;
+  opacity: 0.72;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border-left: 2px solid var(--accent-border);
+  background: var(--accent-soft);
+  white-space: pre-wrap;
+  word-break: break-all;
+  transition: opacity 0.1s ease;
+}
+
+.note-text:hover {
+  opacity: 1;
+  border-left-color: var(--accent);
+}
+
+.note-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.note-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+/* ---------- tag chips ---------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px 2px 10px;
+  border-radius: 12px;
+  font-size: 11.5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+.chip .x {
+  cursor: pointer;
+  opacity: 0.6;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.chip .x:hover {
+  opacity: 1;
+}
+
+.add-tag {
+  position: relative;
+  display: inline-block;
+}
+
+.add-tag input {
+  width: 96px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  border: 1px dashed var(--vscode-input-border, var(--vscode-panel-border));
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-size: 11.5px;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+
+.add-tag input:focus {
+  border-style: solid;
+  border-color: var(--accent);
+}
+
+/* ---------- 自定义分类下拉菜单 ---------- */
+
+.cat-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 140px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent-border);
+  background: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.cat-menu-item {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.cat-menu-item:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.cat-menu-item.create {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.cat-menu-empty {
+  padding: 6px 10px;
+  font-size: 11px;
+  opacity: 0.5;
+}
+
+/* ---------- actions ---------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--vscode-panel-border);
+}
+
+.act {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 11.5px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--vscode-panel-border);
+  background: transparent;
+  color: var(--vscode-foreground);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease,
+    color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.act:hover {
+  background: var(--vscode-list-hoverBackground);
+  border-color: var(--accent-border);
+}
+
+.act-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.act-icon svg {
+  display: block;
+}
+
+/* Claude Code 打开：珊瑚软底 + 橙色 logo，作为品牌主按钮 */
+.act-primary {
+  background: var(--accent-soft);
+  border-color: var(--accent-border);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.act-primary:hover {
+  background: rgba(217, 119, 87, 0.22);
+  border-color: var(--accent);
+  box-shadow: 0 1px 6px rgba(217, 119, 87, 0.25);
+}
+
+.act-danger {
+  margin-left: auto;
+  opacity: 0.7;
+}
+
+.act-danger:hover {
+  background: rgba(220, 80, 70, 0.14);
+  border-color: rgba(220, 80, 70, 0.5);
+  color: #e06b5e;
+  opacity: 1;
+}
+
+.empty {
+  opacity: 0.5;
+  padding: 24px 16px;
+  text-align: center;
+}
