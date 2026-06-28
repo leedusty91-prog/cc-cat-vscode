@@ -1,9 +1,9 @@
 {
-  "name": "cc-cat",
-  "displayName": "Claude Code 会话分类",
-  "description": "给 Claude Code 会话打标签、按分类可视化管理（不修改原始记录）",
+  "name": "cc-session-manager",
+  "displayName": "Claude Code Session Manager",
+  "description": "Organize, tag, and manage Claude Code sessions with notes, favorites, search, and batch operations",
   "version": "0.1.0",
-  "publisher": "Jinxuan_Lee",
+  "publisher": "ljx",
   "license": "MIT",
   "icon": "media/icon.png",
   "repository": {
