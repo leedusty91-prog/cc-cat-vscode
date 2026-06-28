@@ -1,62 +1,91 @@
-# Claude Code 会话分类（cc-cat）
+# Claude Code Session Manager
 
-⚠️ **非官方社区工具**——与 Anthropic / Claude Code 官方无关。
+> ⚠️ **Unofficial community extension** — not affiliated with Anthropic or Claude Code.
 
-一个 VSCode / Antigravity 扩展，给本地的 Claude Code 会话打标签、按分类可视化管理。
+A VS Code extension to organize, tag, and manage your local Claude Code sessions — with notes, favorites, search, sorting, and batch operations.
 
-- **不修改原始记录**：分类信息单独存到每个项目目录下的 `categories.json`（位于 `~/.claude/projects/<项目>/`），删掉也不影响原始会话。
-- **可视化**：侧边栏按分类筛选，卡片上点选添加/移除标签，支持搜索、跨项目浏览。
-- **零运行依赖**：纯 JavaScript，不需要编译。
+## Features
 
-## 使用
+- **Session Classification** — Tag sessions with custom categories. Add, remove, and filter by tags from the sidebar.
+- **Notes** — Add private notes to any session. Click to edit inline.
+- **Favorites / Star** — Star important sessions. Filter by starred sessions in the sidebar.
+- **Search with Highlight** — Search by title or first message. Matching terms are highlighted in results.
+- **Sort** — Sort by newest, oldest, favorites-first, or by category.
+- **Batch Operations** — Select multiple sessions and bulk-add or bulk-remove categories.
+- **Category Management** — Rename or delete categories directly from the sidebar (hover to reveal controls).
+- **Auto Refresh** — File watcher detects new Claude Code sessions and updates the panel automatically (macOS / Windows).
+- **Sidebar Icon** — Folder icon in the Activity Bar. Click to open the panel directly — no commands needed.
 
-1. 在 VSCode / Antigravity 里打开任意一个曾经用过 Claude Code 的项目。
-2. `Cmd/Ctrl + Shift + P` → 运行 **Claude Code: 打开会话分类面板**。
-3. 在面板里：
-   - 卡片下方 `+ 分类` 输入框回车即可打标签，已有分类有自动补全；标签上的 `×` 移除；
-   - 左侧按分类筛选，顶部搜索框搜标题/首条消息；勾选「所有项目」可跨项目一起管理。
-4. 每张卡片底部的操作：
-   - **在 Claude Code 中打开**：在官方 Claude Code for VSCode 扩展面板里恢复此会话
-     （调用扩展命令 `claude-vscode.editor.open <sessionId>`，等同于 `vscode://anthropic.claude-code/open?session=<id>`）；
-   - **终端恢复**：在 IDE 集成终端、于该会话原始项目目录运行 `claude --resume <id>`；
-   - **打开记录**：在编辑器打开原始 `.jsonl`；
-   - **删除**：弹确认框后删除原始记录文件并清理分类（不可恢复）。
+## Usage
 
-> 「在 Claude Code 中打开」依赖已安装官方扩展 `anthropic.claude-code`。若未安装或命令不可用，
-> 会退回到 `vscode://` URI，再不行则提示改用「终端恢复」。
+1. Open any project in VS Code that you've used Claude Code in.
+2. Click the **folder icon** in the Activity Bar (left sidebar) — the session panel opens automatically.
+   - Or press `Cmd/Ctrl + Shift + P` → **Claude Code: 打开会话分类面板**
+3. In the panel:
+   - **Tag sessions** — use the `+ category` input on any card; existing categories auto-complete.
+   - **Star sessions** — click ☆ on any card to bookmark it.
+   - **Add notes** — click `+ Add note` on any card to write a memo.
+   - **Search** — type in the search box at the top; matching text is highlighted.
+   - **Sort** — use the sort bar above the list (Newest / Oldest / Starred first / By category).
+   - **Batch select** — check the circle on multiple cards, then use the batch bar to add/remove categories.
+   - **Rename / delete categories** — hover over a category in the sidebar to reveal ✎ and ✕ buttons.
+   - **All projects** — check "All projects" in the header to manage sessions across all workspaces.
 
-## 安装（开发/侧载）
+## Actions per Session Card
 
-无需编译，直接打包成 `.vsix` 分发：
+| Button | Action |
+|---|---|
+| **Open in Claude Code** | Resume the session in the official Claude Code extension panel |
+| **Terminal Resume** | Run `claude --resume <id>` in the integrated terminal |
+| **Open Log** | Open the raw `.jsonl` file in the editor |
+| **Delete** | Delete the session file permanently (with confirmation) |
+
+> **Open in Claude Code** requires the official `anthropic.claude-code` extension. If unavailable, it falls back to the `vscode://` URI handler, then prompts you to use Terminal Resume instead.
+
+## Data Storage
+
+All tags, notes, and star data are stored in:
+```
+~/.claude/projects/<project>/categories.json
+```
+
+This file is separate from Claude Code's session records — deleting it only removes your tags and notes, never the sessions themselves.
+
+**Old format** (`{sid: ["A","B"]}`) is automatically upgraded to the new format on first read. No data is lost.
+
+## Installation
+
+### From Open VSX (recommended)
+
+Search for `cc-session-manager` in the Extensions panel of VS Code, Cursor, Windsurf, or any Open VSX–compatible editor.
+
+Or install via CLI:
+```bash
+code --install-extension ljx.cc-session-manager
+```
+
+### From VSIX (manual)
 
 ```bash
-# 一次性安装打包工具
-npm install -g @vscode/vsce
+# Download the .vsix from GitHub Releases, then:
+code --install-extension cc-session-manager-0.2.0.vsix
+```
 
-# 在本目录打包
+## Development
+
+No build step required — pure JavaScript.
+
+```bash
+git clone https://github.com/leedusty91-prog/cc-cat-vscode.git
 cd cc-cat-vscode
-vsce package        # 生成 cc-cat-0.1.0.vsix
+# Open in VS Code and press F5 to launch the Extension Development Host
 ```
 
-让别人安装：把 `.vsix` 发给对方，命令行安装即可（Antigravity 同理）：
+## Notes
 
-```bash
-code --install-extension cc-cat-0.1.0.vsix
-# Antigravity 的 CLI 名称可能不同，或在「扩展」面板右上角菜单 → Install from VSIX… 选择该文件
-```
+- **Linux**: `fs.watch` with `recursive: true` is not supported. Auto-refresh is silently disabled; manually toggling the scope still refreshes the list.
+- **Open in Claude Code**: depends on the `anthropic.claude-code` extension being installed.
 
-> 打包时 vsce 可能提示缺少 `repository` 字段或 LICENSE，加 `--allow-missing-repository` 跳过即可。
+## License
 
-## 调试
-
-用 VSCode 打开本目录，按 `F5` 启动「扩展开发主机」窗口，在新窗口里运行命令即可热调试。
-
-## 数据格式
-
-`categories.json` 是简单的 `sessionId → [分类]` 映射，可手动编辑或用配套的 CLI（`cc-cat.py`）混用：
-
-```json
-{
-  "d300305a-cc28-4fdb-815d-348b6c06d377": ["记忆系统", "后端"]
-}
-```
+MIT
