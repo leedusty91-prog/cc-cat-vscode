@@ -288,8 +288,24 @@ function openPanel(context) {
 }
 
 function activate(context) {
+  // 命令：打开面板
   context.subscriptions.push(
     vscode.commands.registerCommand("ccCat.open", () => openPanel(context))
+  );
+
+  // TreeView：侧边栏视图（点击图标后自动打开）
+  const treeDataProvider = {
+    getTreeItem: () => new vscode.TreeItem(""),
+    getChildren: () => {
+      // 初始化时直接打开面板
+      if (!currentPanel) {
+        openPanel(context);
+      }
+      return [];
+    },
+  };
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider("ccSessionManagerView", treeDataProvider)
   );
 }
 

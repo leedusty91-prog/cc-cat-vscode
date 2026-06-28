@@ -29,11 +29,30 @@
   ],
   "main": "./extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ccSessionManager",
+          "title": "Claude Code Session Manager",
+          "icon": "media/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "ccSessionManager": [
+        {
+          "id": "ccSessionManagerView",
+          "name": "Sessions",
+          "when": "true"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "ccCat.open",
         "title": "打开会话分类面板",
-        "category": "Claude Code"
+        "category": "Claude Code",
+        "icon": "media/icon.png"
       }
     ]
   }
