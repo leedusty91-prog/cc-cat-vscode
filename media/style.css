@@ -75,9 +75,7 @@ header {
   cursor: pointer;
 }
 
-.scope input {
-  accent-color: var(--accent);
-}
+/* 「所有项目」复选框：复用卡片选择框的玻璃圆形样式（见下方 .select-cb 分组） */
 
 /* ---------- layout ---------- */
 
@@ -369,7 +367,7 @@ main {
   gap: 7px;
 }
 
-/* 选择复选框 —— 玻璃质感圆圈 */
+/* 选择复选框 —— 玻璃质感圆圈（卡片选择框 + 顶部「所有项目」框共用） */
 .select-label {
   display: flex;
   align-items: center;
@@ -377,7 +375,8 @@ main {
   cursor: pointer;
 }
 
-.select-cb {
+.select-cb,
+#scopeAll {
   appearance: none;
   -webkit-appearance: none;
   position: relative;
@@ -401,12 +400,14 @@ main {
     box-shadow 0.15s ease, transform 0.1s ease;
 }
 
-.select-cb:hover {
+.select-cb:hover,
+#scopeAll:hover {
   border-color: var(--accent);
   transform: scale(1.08);
 }
 
-.select-cb:checked {
+.select-cb:checked,
+#scopeAll:checked {
   border-color: var(--accent);
   /* 橙色玻璃球：左上高光 + 珊瑚渐变 */
   background: radial-gradient(
@@ -420,7 +421,8 @@ main {
 }
 
 /* 选中对勾 */
-.select-cb:checked::after {
+.select-cb:checked::after,
+#scopeAll:checked::after {
   content: "";
   position: absolute;
   left: 5px;
