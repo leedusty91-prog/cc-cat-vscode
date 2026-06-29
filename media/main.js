@@ -808,6 +808,10 @@
 
   // ===== 应用后端数据 =====
   function applyData(sessions) {
+    // 记录文档滚动位置：自动刷新 / 操作回填会全量重建列表，
+    // 若不恢复，正在阅读时会被拽回顶部。搜索/排序走 renderList，不在此列。
+    const scrollY = window.scrollY;
+
     state.sessions = sessions;
 
     // 清理已不存在的 selected sid
@@ -827,6 +831,9 @@
     }
 
     render();
+
+    // 恢复滚动位置（内容变矮时浏览器会自动 clamp 到合法范围）
+    window.scrollTo(0, scrollY);
   }
 
   // ===== 事件监听 =====
