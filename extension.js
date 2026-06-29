@@ -287,25 +287,105 @@ function openPanel(context) {
   startFsWatcher();
 }
 
+// 活动栏侧边视图里的启动器 HTML：品牌星芒 + 打开按钮。
+function launcherHtml() {
+  const n = nonce();
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'none'; style-src 'nonce-${n}'; script-src 'nonce-${n}';" />
+  <style nonce="${n}">
+    body { margin: 0; padding: 20px 14px; font-family: var(--vscode-font-family); color: var(--vscode-foreground); }
+    .wrap { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+    .title { font-size: 13px; font-weight: 600; letter-spacing: 0.2px; }
+    .desc { font-size: 11.5px; opacity: 0.62; line-height: 1.55; }
+    .open-btn {
+      width: 100%;
+      padding: 9px 12px;
+      border: none;
+      border-radius: 6px;
+      background: #d97757;
+      color: #fff;
+      font-weight: 600;
+      font-size: 12.5px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+    .open-btn:hover { background: #c96442; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true">
+      <g stroke="#d97757" stroke-width="2" stroke-linecap="round">
+        <line x1="13.5" y1="12" x2="22.5" y2="12"/>
+        <line x1="13.3" y1="12.75" x2="21.09" y2="17.25"/>
+        <line x1="12.75" y1="13.3" x2="17.25" y2="21.09"/>
+        <line x1="12" y1="13.5" x2="12" y2="22.5"/>
+        <line x1="11.25" y1="13.3" x2="6.75" y2="21.09"/>
+        <line x1="10.7" y1="12.75" x2="2.91" y2="17.25"/>
+        <line x1="10.5" y1="12" x2="1.5" y2="12"/>
+        <line x1="10.7" y1="11.25" x2="2.91" y2="6.75"/>
+        <line x1="11.25" y1="10.7" x2="6.75" y2="2.91"/>
+        <line x1="12" y1="10.5" x2="12" y2="1.5"/>
+        <line x1="12.75" y1="10.7" x2="17.25" y2="2.91"/>
+        <line x1="13.3" y1="11.25" x2="21.09" y2="6.75"/>
+      </g>
+    </svg>
+    <div class="title">Claude Code Session Manager</div>
+    <button class="open-btn" id="open">Open Session Manager</button>
+    <div class="desc">Tag, note, favorite, search &amp; manage your Claude Code sessions.</div>
+  </div>
+  <script nonce="${n}">
+    const vscode = acquireVsCodeApi();
+    document.getElementById("open").addEventListener("click", () => {
+      vscode.postMessage({ type: "open" });
+    });
+  </script>
+</body>
+</html>`;
+}
+
 function activate(context) {
-  // 命令：打开面板
+  // 命令：打开主面板
   context.subscriptions.push(
     vscode.commands.registerCommand("ccCat.open", () => openPanel(context))
   );
 
-  // TreeView：侧边栏视图（点击图标后自动打开）
-  const treeDataProvider = {
-    getTreeItem: () => new vscode.TreeItem(""),
-    getChildren: () => {
-      // 初始化时直接打开面板
-      if (!currentPanel) {
-        openPanel(context);
-      }
-      return [];
+  // 活动栏侧边视图：WebviewView 启动器。点击活动栏图标即打开主面板，
+  // 关闭后仍可通过侧栏按钮随时重开。
+  const provider = {
+    resolveWebviewView(webviewView) {
+      webviewView.webview.options = { enableScripts: true };
+      webviewView.webview.html = launcherHtml();
+      webviewView.webview.onDidReceiveMessage(
+        (msg) => {
+          if (msg && msg.type === "open") {
+            openPanel(context);
+          }
+        },
+        undefined,
+        context.subscriptions
+      );
+      // 点击活动栏图标 → 视图首次解析 → 直接打开主面板
+      openPanel(context);
+      // 视图再次变为可见时（重新点击图标）也确保面板打开/聚焦
+      webviewView.onDidChangeVisibility(
+        () => {
+          if (webviewView.visible) {
+            openPanel(context);
+          }
+        },
+        undefined,
+        context.subscriptions
+      );
     },
   };
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider("ccSessionManagerView", treeDataProvider)
+    vscode.window.registerWebviewViewProvider("ccSessionManagerView", provider)
   );
 }
 
