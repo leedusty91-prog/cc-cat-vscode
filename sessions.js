@@ -58,9 +58,13 @@ function userText(entry) {
   return "";
 }
 
-function parseSession(filePath, projDir) {
+// 解析结果缓存：filePath -> { mtimeMs, base }。会话 .jsonl 可能有数 MB，
+// 每次操作全量重解析开销大；按 mtime 命中缓存，只重读变更过的文件。
+const parseCache = new Map();
+
+// 实际解析（昂贵）。mtimeMs 由调用方传入，避免重复 statSync。
+function parseSession(filePath, projDir, mtimeMs) {
   const sid = path.basename(filePath, ".jsonl");
-  const stat = fs.statSync(filePath);
   let aiTitle = "";
   let customTitle = "";
   let snippet = "";
@@ -94,7 +98,19 @@ function parseSession(filePath, projDir) {
   }
 
   const title = customTitle || aiTitle || snippet || "(无标题)";
-  return { sid, path: filePath, projDir, cwd, title, snippet, mtime: stat.mtimeMs };
+  return { sid, path: filePath, projDir, cwd, title, snippet, mtime: mtimeMs };
+}
+
+// 带缓存的解析：statSync 便宜，mtime 未变则复用上次解析结果。
+function parseSessionCached(filePath, projDir) {
+  const stat = fs.statSync(filePath);
+  const hit = parseCache.get(filePath);
+  if (hit && hit.mtimeMs === stat.mtimeMs) {
+    return hit.base;
+  }
+  const base = parseSession(filePath, projDir, stat.mtimeMs);
+  parseCache.set(filePath, { mtimeMs: stat.mtimeMs, base });
+  return base;
 }
 
 function indexPath(projDir) {
@@ -114,7 +130,12 @@ function loadIndex(projDir) {
 }
 
 function saveIndex(projDir, index) {
-  fs.writeFileSync(indexPath(projDir), JSON.stringify(index, null, 2), "utf-8");
+  // 原子写：先写临时文件再 rename，避免写一半崩溃导致 JSON 损坏。
+  // tmp 与目标同目录（同一文件系统），rename 才是原子操作。
+  const p = indexPath(projDir);
+  const tmp = p + ".tmp";
+  fs.writeFileSync(tmp, JSON.stringify(index, null, 2), "utf-8");
+  fs.renameSync(tmp, p);
 }
 
 // ── entry helper：向后兼容旧数组格式 ──────────────────────────────────────
@@ -167,12 +188,10 @@ function collect(workspacePath, scanAll) {
         continue;
       }
       try {
-        const session = parseSession(path.join(dir, name), dir);
-        const entry = getEntry(index, session.sid);
-        session.cats = entry.cats;
-        session.note = entry.note;
-        session.star = entry.star;
-        sessions.push(session);
+        const base = parseSessionCached(path.join(dir, name), dir);
+        const entry = getEntry(index, base.sid);
+        // 展开成新对象，避免污染缓存里的 base（cats/note/star 来自索引，可独立变化）
+        sessions.push({ ...base, cats: entry.cats, note: entry.note, star: entry.star });
       } catch {
         // 跳过损坏/读取失败的会话文件
       }
@@ -182,7 +201,7 @@ function collect(workspacePath, scanAll) {
   return sessions;
 }
 
-// ── addTag / removeTag / deleteSession（保持原签名，改用 entry helper）─────
+// ── addTag / removeTag / forgetSession（改用 entry helper）─────
 
 function addTag(sessions, sid, category) {
   const session = sessions.find((s) => s.sid === sid);
@@ -213,21 +232,14 @@ function removeTag(sessions, sid, category) {
   return entry.cats;
 }
 
-function deleteSession(sessions, sid) {
-  const session = sessions.find((s) => s.sid === sid);
-  if (!session) {
-    return false;
-  }
-  try {
-    fs.unlinkSync(session.path);
-  } catch {
-    return false;
-  }
-  const index = loadIndex(session.projDir);
-  // 文件已删，连带移除其分类/备注/星标记录
+// 会话文件已被删除（由扩展宿主移入系统回收站），清理其索引记录与解析缓存。
+// 不在此处删文件：物理删除需 vscode API（回收站），属于宿主层职责，
+// 本模块保持无 vscode 依赖。
+function forgetSession(projDir, sid) {
+  parseCache.delete(path.join(projDir, sid + ".jsonl"));
+  const index = loadIndex(projDir);
   delete index[sid];
-  saveIndex(session.projDir, index);
-  return true;
+  saveIndex(projDir, index);
 }
 
 // ── 新增功能 ──────────────────────────────────────────────────────────────
@@ -378,7 +390,7 @@ module.exports = {
   collect,
   addTag,
   removeTag,
-  deleteSession,
+  forgetSession,
   setNote,
   toggleStar,
   batchAddTag,

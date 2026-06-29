@@ -119,7 +119,7 @@ async function openInClaudeCode(sid) {
 
 async function confirmDelete(panel, all, sid, title) {
   const choice = await vscode.window.showWarningMessage(
-    `删除会话「${title}」？此操作会移除原始记录文件，不可恢复。`,
+    `删除会话「${title}」？文件将移到系统回收站，可在回收站中恢复。`,
     { modal: true },
     "删除"
   );
@@ -127,10 +127,22 @@ async function confirmDelete(panel, all, sid, title) {
     return;
   }
   const list = sessions.collect(workspacePath(), all);
-  const ok = sessions.deleteSession(list, sid);
-  if (!ok) {
-    vscode.window.showErrorMessage("删除失败：找不到或无法删除该会话文件。");
+  const session = list.find((s) => s.sid === sid);
+  if (!session) {
+    vscode.window.showErrorMessage("删除失败：找不到该会话。");
+    return;
   }
+  try {
+    // 走系统回收站，误删可恢复（优于不可逆的 fs.unlinkSync）。
+    await vscode.workspace.fs.delete(vscode.Uri.file(session.path), {
+      useTrash: true,
+    });
+  } catch {
+    vscode.window.showErrorMessage("删除失败：无法删除该会话文件。");
+    return;
+  }
+  // 文件已删，清理该会话的索引记录与解析缓存。
+  sessions.forgetSession(session.projDir, sid);
   postData(panel, all);
 }
 
