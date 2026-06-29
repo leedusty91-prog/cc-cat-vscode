@@ -40,6 +40,9 @@ function htmlContent(webview, extensionUri) {
   const styleUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, "media", "style.css")
   );
+  const robotUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "robot.png")
+  );
   const n = nonce();
   return `<!DOCTYPE html>
 <html lang="zh">
@@ -47,29 +50,14 @@ function htmlContent(webview, extensionUri) {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${n}';" />
+    content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${n}';" />
   <link href="${styleUri}" rel="stylesheet" />
   <title>会话分类</title>
 </head>
 <body>
   <header>
     <div class="brand">
-      <svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-        <g stroke="#d97757" stroke-width="2" stroke-linecap="round">
-          <line x1="13.5" y1="12" x2="22.5" y2="12"/>
-          <line x1="13.3" y1="12.75" x2="21.09" y2="17.25"/>
-          <line x1="12.75" y1="13.3" x2="17.25" y2="21.09"/>
-          <line x1="12" y1="13.5" x2="12" y2="22.5"/>
-          <line x1="11.25" y1="13.3" x2="6.75" y2="21.09"/>
-          <line x1="10.7" y1="12.75" x2="2.91" y2="17.25"/>
-          <line x1="10.5" y1="12" x2="1.5" y2="12"/>
-          <line x1="10.7" y1="11.25" x2="2.91" y2="6.75"/>
-          <line x1="11.25" y1="10.7" x2="6.75" y2="2.91"/>
-          <line x1="12" y1="10.5" x2="12" y2="1.5"/>
-          <line x1="12.75" y1="10.7" x2="17.25" y2="2.91"/>
-          <line x1="13.3" y1="11.25" x2="21.09" y2="6.75"/>
-        </g>
-      </svg>
+      <img class="brand-icon" src="${robotUri}" width="24" height="24" alt="" />
       Claude Code 会话
     </div>
     <input id="search" type="text" placeholder="搜索标题 / 首条消息" />
@@ -299,18 +287,22 @@ function openPanel(context) {
   startFsWatcher();
 }
 
-// 活动栏侧边视图里的启动器 HTML：品牌星芒 + 打开按钮。
-function launcherHtml() {
+// 活动栏侧边视图里的启动器 HTML：机器人形象 + 打开按钮。
+function launcherHtml(webview, extensionUri) {
   const n = nonce();
+  const robotUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "robot.png")
+  );
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'none'; style-src 'nonce-${n}'; script-src 'nonce-${n}';" />
+    content="default-src 'none'; img-src ${webview.cspSource}; style-src 'nonce-${n}'; script-src 'nonce-${n}';" />
   <style nonce="${n}">
     body { margin: 0; padding: 20px 14px; font-family: var(--vscode-font-family); color: var(--vscode-foreground); }
     .wrap { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; }
+    .robot { width: 72px; height: 72px; object-fit: contain; }
     .title { font-size: 13px; font-weight: 600; letter-spacing: 0.2px; }
     .desc { font-size: 11.5px; opacity: 0.62; line-height: 1.55; }
     .open-btn {
@@ -331,22 +323,7 @@ function launcherHtml() {
 </head>
 <body>
   <div class="wrap">
-    <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true">
-      <g stroke="#d97757" stroke-width="2" stroke-linecap="round">
-        <line x1="13.5" y1="12" x2="22.5" y2="12"/>
-        <line x1="13.3" y1="12.75" x2="21.09" y2="17.25"/>
-        <line x1="12.75" y1="13.3" x2="17.25" y2="21.09"/>
-        <line x1="12" y1="13.5" x2="12" y2="22.5"/>
-        <line x1="11.25" y1="13.3" x2="6.75" y2="21.09"/>
-        <line x1="10.7" y1="12.75" x2="2.91" y2="17.25"/>
-        <line x1="10.5" y1="12" x2="1.5" y2="12"/>
-        <line x1="10.7" y1="11.25" x2="2.91" y2="6.75"/>
-        <line x1="11.25" y1="10.7" x2="6.75" y2="2.91"/>
-        <line x1="12" y1="10.5" x2="12" y2="1.5"/>
-        <line x1="12.75" y1="10.7" x2="17.25" y2="2.91"/>
-        <line x1="13.3" y1="11.25" x2="21.09" y2="6.75"/>
-      </g>
-    </svg>
+    <img class="robot" src="${robotUri}" alt="" />
     <div class="title">Claude Code Session Manager</div>
     <button class="open-btn" id="open">Open Session Manager</button>
     <div class="desc">Tag, note, favorite, search &amp; manage your Claude Code sessions.</div>
@@ -371,8 +348,11 @@ function activate(context) {
   // 关闭后仍可通过侧栏按钮随时重开。
   const provider = {
     resolveWebviewView(webviewView) {
-      webviewView.webview.options = { enableScripts: true };
-      webviewView.webview.html = launcherHtml();
+      webviewView.webview.options = {
+        enableScripts: true,
+        localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "media")],
+      };
+      webviewView.webview.html = launcherHtml(webviewView.webview, context.extensionUri);
       webviewView.webview.onDidReceiveMessage(
         (msg) => {
           if (msg && msg.type === "open") {

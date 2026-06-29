@@ -2,7 +2,7 @@
   "name": "cc-session-manager",
   "displayName": "Claude Code Session Manager",
   "description": "Manage Claude Code sessions visually. Features: tag & categorize sessions, add notes, star favorites, search with highlight, sort, batch operations, auto-refresh on new sessions, and one-click access from the sidebar.",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "publisher": "ljx",
   "license": "MIT",
   "icon": "media/icon.png",

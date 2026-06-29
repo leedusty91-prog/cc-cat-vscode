@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0] - 2026-06-29
+
+### UI
+- 品牌形象更新为卡通机器人:面板头部品牌图标与侧边栏启动器的橙色星芒均替换为机器人 `media/robot.png`。
+- webview CSP 增加 `img-src ${webview.cspSource}` 以加载本地图片;启动器视图增加 `localResourceRoots`。
+
 ## [0.3.3] - 2026-06-29
 
 ### Performance
