@@ -17,9 +17,15 @@
 2. Publisher（namespace）与 Token：
    - Publisher 为 `ljx`（见 `package.json`）。
    - 在 <https://open-vsx.org> 用 GitHub 账号登录，生成 Access Token（User Settings → Access Tokens）。
+   - 把 token 存到项目根目录的 `.env`（已被 `.gitignore`/`.vscodeignore` 排除，不会提交或打包）：
+     ```
+     OVSX_PAT=<你的 Open VSX token>
+     ```
+     `ovsx` 会自动读取 `OVSX_PAT` 环境变量，发布时无需再带 `-p`。
    - **首次发布**：若 namespace `ljx` 尚不存在，先创建：
      ```bash
-     npx ovsx create-namespace ljx -p <OPEN_VSX_TOKEN>
+     set -a && source .env && set +a
+     npx ovsx create-namespace ljx
      ```
 
 ## 每次发布
@@ -39,9 +45,10 @@
    git commit -m "chore(release): <version>"
    git push origin master
    ```
-4. **发布到 Open VSX**：
+4. **发布到 Open VSX**（先从 `.env` 加载 token，再发布）：
    ```bash
-   npx ovsx publish releases/cc-session-manager-<version>.vsix -p <OPEN_VSX_TOKEN>
+   set -a && source .env && set +a
+   npx ovsx publish releases/cc-session-manager-<version>.vsix
    ```
    发布后几分钟内上架：<https://open-vsx.org/extension/ljx/cc-session-manager>。
 5. **（可选）打 tag + GitHub Release**，给手动安装者一个下载点：
