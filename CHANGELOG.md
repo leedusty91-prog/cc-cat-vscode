@@ -1,86 +1,99 @@
 # Changelog
 
+## [0.5.0] - 2026-07-01
+
+### Features
+- **Bilingual UI (English / 中文)**: every user-facing string — the panel, sidebar, sort bar, batch tools, session actions, notes, native dialogs, and the Activity Bar launcher — is now available in both English and Chinese. A one-click toggle in the header switches languages, or set `ccCat.language` (`auto` / `zh` / `en`) in Settings. `auto` follows the VS Code display language.
+
+### Design Rationale
+- Strings live in a single `media/i18n.js` dictionary loaded by both the extension host (`require`) and the webview (`<script>`) via a small UMD wrapper, so the two processes never drift.
+- Manifest-contributed titles (command, view, activity bar) are localized through `package.nls.json` / `package.nls.zh-cn.json`, the only mechanism VS Code offers for static contribution strings.
+- Switching language rewrites the webview HTML from the host on the `ccCat.language` config change, keeping the shell, the webview UI, and native dialogs in sync.
+
+### Notes & Caveats
+- The internal filter key for uncategorized sessions stays a stable constant; only its displayed label is localized, so existing `categories.json` data is unaffected.
+
 ## [0.4.1] - 2026-06-29
 
 ### Fixes
-- 修复机器人图标背景不透明:0.4.0 用的源图是烤进去的灰白棋盘格(假透明),替换为真透明背景的图源并重新裁剪居中。
+- Fixed the opaque background on the robot icon: 0.4.0 shipped a source image with a baked-in gray-and-white checkerboard (fake transparency); replaced it with a genuinely transparent source and re-cropped it centered.
 
 ## [0.4.0] - 2026-06-29
 
 ### UI
-- 品牌形象更新为卡通机器人:面板头部品牌图标与侧边栏启动器的橙色星芒均替换为机器人 `media/robot.png`。
-- webview CSP 增加 `img-src ${webview.cspSource}` 以加载本地图片;启动器视图增加 `localResourceRoots`。
+- Updated the brand image to a cartoon robot: the panel header brand icon and the orange starburst in the sidebar launcher were both replaced with `media/robot.png`.
+- Added `img-src ${webview.cspSource}` to the webview CSP so local images load; added `localResourceRoots` to the launcher view.
 
 ## [0.3.3] - 2026-06-29
 
 ### Performance
-- **会话解析缓存**：`collect()` 按文件 `mtime` 缓存解析结果，只重读变更过的 `.jsonl`。实测 84 个会话冷扫描 160ms → 热扫描 1ms。此前每次打标签/备注/自动刷新都全量重解析所有会话（含数 MB 大文件），长对话进行中文件监听频繁触发时开销尤其明显。
+- **Session parse cache**: `collect()` caches parse results per file `mtime` and only re-reads changed `.jsonl` files. Measured on 84 sessions: 160ms cold scan → 1ms warm scan. Previously every tag/note/auto-refresh re-parsed all sessions from scratch (including multi-MB files), which was especially costly when the file watcher fired frequently during a long, active conversation.
 
 ### Safety
-- **删除走系统回收站**：会话删除从不可逆的 `fs.unlinkSync` 改为 `vscode.workspace.fs.delete({ useTrash: true })`，误删可在系统回收站恢复。
-- **`categories.json` 原子写**：改为写临时文件 + `rename`，避免写入中途崩溃导致索引 JSON 损坏。
+- **Delete goes to the system trash**: session deletion changed from the irreversible `fs.unlinkSync` to `vscode.workspace.fs.delete({ useTrash: true })`, so accidental deletes can be recovered from the system trash.
+- **Atomic `categories.json` writes**: switched to writing a temp file + `rename` to avoid corrupting the index JSON if a write is interrupted mid-way.
 
 ### UI
-- 顶部「所有项目」复选框改成与卡片选择框一致的玻璃质感圆形（此前是原生方块勾选）。
+- The top "All projects" checkbox now matches the glass-style round checkbox used by the card selectors (it was previously a native square checkbox).
 
 ### UX
-- **保留滚动位置**：文件监听自动刷新或打标签/备注/星标回填数据时，列表全量重建后恢复原滚动位置，不再跳回顶部。
+- **Preserve scroll position**: when the file watcher auto-refreshes or a tag/note/star action refills the data, the list is fully rebuilt but the scroll position is restored, so you no longer jump back to the top.
 
 ### Notes
-- `sessions.deleteSession` 重命名为 `forgetSession`（仅清理索引与解析缓存）；物理删除移交扩展宿主，数据层 `sessions.js` 保持无 vscode 依赖。
+- `sessions.deleteSession` was renamed to `forgetSession` (it only clears the index and parse cache); physical deletion moved to the extension host, keeping the `sessions.js` data layer free of any vscode dependency.
 
 ## [0.3.2] - 2026-06-29
 
 ### Changes
-- 更换为 3D 文件夹商店图标。
-- 精简 README：删除 Usage，保留功能说明。
+- Switched to a 3D folder store icon.
+- Trimmed the README: removed Usage, kept the feature descriptions.
 
 ## [0.3.0] - 2026-06-29
 
 ### Fixes
-- **修复侧边栏无法重新打开面板**：之前用 TreeView 的 hack 只在首次展开时触发，关闭后点图标无反应。改为 WebviewView 启动器。
-- **修复侧边栏空白**：活动栏视图现在显示一个主题化启动器（星芒图标 + 「Open Session Manager」按钮 + 说明）。
+- **Fixed the sidebar being unable to reopen the panel**: the previous TreeView hack only fired on first expansion, so clicking the icon after closing did nothing. Replaced it with a WebviewView launcher.
+- **Fixed the blank sidebar**: the Activity Bar view now shows a themed launcher (starburst icon + "Open Session Manager" button + description).
 
 ### Changes
-- 活动栏图标点击后自动打开主面板；关闭后可随时通过侧栏按钮重开。
+- Clicking the Activity Bar icon now opens the main panel automatically; after closing, it can be reopened anytime from the sidebar button.
 
 ## [0.2.0] - 2026-06-28
 
 ### Features
-- 活动栏（侧边栏）新增文件夹图标，点击直接打开面板，无需输入命令。
+- Added a folder icon to the Activity Bar (sidebar) that opens the panel directly, without typing a command.
 
 ## [0.1.0] - 2026-06-28
 
 ### Features
-- **会话备注**：为每个会话添加、编辑、查看备注文本，持久化存储
-- **收藏/星标**：一键收藏重要会话，侧边栏新增「★ 已收藏」快速过滤
-- **搜索高亮**：搜索时命中词自动用高亮标记，支持标题和摘要
-- **排序切换**：支持按最新、最旧、收藏优先、按分类四种排序方式
-- **批量操作**：勾选多个会话后批量添加/移除分类、批量清除选择
-- **分类管理**：侧边栏分类项支持就地重命名、删除（带模态确认）
-- **文件监听自动刷新**：Claude Code 新增会话时自动出现，无需手动刷新
-- **Claude Code 主题**：完整适配珊瑚色 (Coral) 强调色、玻璃质感 UI、VSCode 亮/暗主题自适应
+- **Session notes**: add, edit, and view a note on each session, persisted to disk.
+- **Favorites / stars**: star important sessions with one click; added a "★ Favorites" quick filter to the sidebar.
+- **Search highlight**: matched terms are highlighted while searching, across both title and snippet.
+- **Sort options**: sort by newest, oldest, favorites-first, or category.
+- **Batch operations**: select multiple sessions to bulk add/remove categories or clear the selection.
+- **Category management**: sidebar category items support inline rename and delete (with a modal confirmation).
+- **File-watch auto refresh**: new Claude Code sessions appear automatically, no manual refresh needed.
+- **Claude Code theme**: full coral accent color, glass-style UI, and VS Code light/dark theme adaptation.
 
 ### Data Model
-- 分类索引升级：从简单数组 `{sid: ["A"]}` 升级为完整对象 `{sid: {cats, note, star}}`，完全向后兼容旧数据
-- Session 对象新增 `note` (字符串) 和 `star` (布尔) 字段
+- Category index upgraded from the simple array `{sid: ["A"]}` to the full object `{sid: {cats, note, star}}`, fully backward compatible with old data.
+- The session object gained `note` (string) and `star` (boolean) fields.
 
 ### UI Improvements
-- 左上角品牌图标换成 Anthropic 橙色星芒标志
-- 「在 Claude Code 中打开」按钮带星芒图标
-- 勾选框改为玻璃质感圆圈
-- 整体美化以符合 Claude Code 视觉语言
+- Replaced the top-left brand icon with the Anthropic orange starburst mark.
+- The "Open in Claude Code" button carries a starburst icon.
+- Checkboxes changed to glass-style circles.
+- Overall polish to match the Claude Code visual language.
 
 ### Backend
-- 文件监听 (`fs.watch` 递归 + 600ms 防抖) 实时推送新会话到 webview
-- 跨项目范围管理：同一操作自动应用于当前项目或所有项目
-- 完整的消息协议与前后端零重叠实现，13 个消息 type 前后端对齐
+- File watching (`fs.watch` recursive + 600ms debounce) pushes new sessions to the webview in real time.
+- Cross-project scope: the same operation applies automatically to the current project or all projects.
+- Complete message protocol with zero overlap between front and back ends; 13 message types aligned on both sides.
 
 ### Notes
-- ⚠️ 非官方工具，与 Anthropic / Claude Code 官方无关
-- Linux 用户：`fs.watch recursive` 暂不支持，自动刷新功能禁用；手动切换范围仍可刷新
-- 所有分类/备注/星标数据存在 `~/.claude/projects/<项目>/categories.json`，安全隔离，不修改原始会话记录
+- ⚠️ Unofficial tool, not affiliated with Anthropic / Claude Code.
+- Linux users: `fs.watch` recursive is not yet supported, so auto refresh is disabled; manually toggling the scope still refreshes.
+- All category/note/star data is stored in `~/.claude/projects/<project>/categories.json`, safely isolated and never modifying the original session records.
 
 ---
 
-**首次发布**：新功能全览，功能完整，生产就绪。
+**First release**: full feature overview, complete and production-ready.

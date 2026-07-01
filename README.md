@@ -15,6 +15,7 @@ Organize, tag, and manage your local Claude Code sessions — visually.
 - **Category Management** — Rename or delete categories from the sidebar.
 - **Auto Refresh** — New sessions appear automatically (macOS / Windows).
 - **One-Click Sidebar** — Folder icon in the Activity Bar opens the panel directly.
+- **Bilingual UI** — Switch between English and 中文 with one click in the header, or set `ccCat.language` in Settings.
 
 ## Session Actions
 
@@ -31,6 +32,12 @@ Search `cc-session-manager` in the Extensions panel, or:
 ```bash
 code --install-extension ljx.cc-session-manager
 ```
+
+## Feedback & Contact
+
+Feature requests and bug reports are welcome — reach out at **leedusty91@gmail.com**.
+
+Source code and issues: [github.com/leedusty91-prog/cc-cat-vscode](https://github.com/leedusty91-prog/cc-cat-vscode)
 
 ## License
 

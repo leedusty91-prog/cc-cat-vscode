@@ -3,17 +3,24 @@
 (function () {
   const vscode = acquireVsCodeApi();
 
+  // ===== 语言文案 =====
+  // 语言由宿主注入到 <body data-locale>；i18n.js 已在本脚本前加载并挂到 window.I18N。
+  const LOCALE = document.body.dataset.locale === "zh" ? "zh" : "en";
+  const L = (window.I18N && window.I18N[LOCALE]) || (window.I18N && window.I18N.en) || {};
+
   // ===== 常量 =====
+  // UNCAT 既是过滤器内部 key 也曾作为显示文案；为支持多语言，key 保持中文常量不变
+  // （仅内部使用、不展示），显示时统一用 L.uncategorized。
   const UNCAT = "(未分类)";
   const ALL = "__all__";
   const STAR = "__star__"; // 收藏过滤器特殊 key
 
-  // 排序选项
+  // 排序选项（label 随语言变化）
   const SORT_OPTS = [
-    { key: "newest", label: "最新" },
-    { key: "oldest", label: "最旧" },
-    { key: "star", label: "收藏优先" },
-    { key: "cat", label: "按分类" },
+    { key: "newest", label: L.sortNewest },
+    { key: "oldest", label: L.sortOldest },
+    { key: "star", label: L.sortStar },
+    { key: "cat", label: L.sortCat },
   ];
 
   // ===== 状态 =====
@@ -32,6 +39,7 @@
   const els = {
     search: document.getElementById("search"),
     scopeAll: document.getElementById("scopeAll"),
+    langToggle: document.getElementById("langToggle"),
     sidebar: document.getElementById("sidebar"),
     list: document.getElementById("list"),
   };
@@ -175,7 +183,7 @@
     // 重命名按钮
     const renameBtn = document.createElement("button");
     renameBtn.className = "cat-op-btn";
-    renameBtn.title = "重命名";
+    renameBtn.title = L.rename;
     renameBtn.textContent = "✎";
     renameBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -185,7 +193,7 @@
     // 删除按钮
     const delBtn = document.createElement("button");
     delBtn.className = "cat-op-btn cat-op-del";
-    delBtn.title = "删除分类";
+    delBtn.title = L.deleteCategory;
     delBtn.textContent = "✕";
     delBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -242,14 +250,14 @@
 
   function renderSidebar() {
     els.sidebar.innerHTML = "";
-    els.sidebar.append(makeCatItem("全部", ALL));
+    els.sidebar.append(makeCatItem(L.all, ALL));
     // 收藏项（放在全部下面）
-    const starItem = makeCatItem("★ 已收藏", STAR);
+    const starItem = makeCatItem(L.starred, STAR);
     starItem.classList.add("cat-item-star");
     els.sidebar.append(starItem);
     // 真实分类（带操作按钮）
     allCategories().forEach((c) => els.sidebar.append(makeCatItemReal(c)));
-    els.sidebar.append(makeCatItem(UNCAT, UNCAT));
+    els.sidebar.append(makeCatItem(L.uncategorized, UNCAT));
   }
 
   // ===== 排序工具条 =====
@@ -261,7 +269,7 @@
 
     const label = document.createElement("span");
     label.className = "sort-label";
-    label.textContent = "排序：";
+    label.textContent = L.sortLabel;
     sortBar.append(label);
 
     SORT_OPTS.forEach((opt) => {
@@ -318,11 +326,11 @@
     // 已选数量
     const info = document.createElement("span");
     info.className = "batch-info";
-    info.textContent = `已选 ${state.selected.size} 项`;
+    info.textContent = L.batchSelected(state.selected.size);
     batchBar.append(info);
 
     // 批量添加分类
-    const addWrap = makeBatchTagInput("添加分类", (category) => {
+    const addWrap = makeBatchTagInput(L.batchAdd, (category) => {
       send("batchTag", { sids: Array.from(state.selected), category });
     });
     batchBar.append(addWrap);
@@ -334,13 +342,13 @@
       removeWrap.className = "batch-remove-wrap";
       const removeLabel = document.createElement("span");
       removeLabel.className = "batch-remove-label";
-      removeLabel.textContent = "移除分类：";
+      removeLabel.textContent = L.batchRemoveLabel;
       removeWrap.append(removeLabel);
       selCats.forEach((cat) => {
         const btn = document.createElement("button");
         btn.className = "batch-remove-btn";
         btn.textContent = cat;
-        btn.title = `批量移除分类「${cat}」`;
+        btn.title = L.batchRemoveTitle(cat);
         btn.addEventListener("click", () => {
           send("batchUntag", { sids: Array.from(state.selected), category: cat });
         });
@@ -352,7 +360,7 @@
     // 清空选择
     const clearBtn = document.createElement("button");
     clearBtn.className = "batch-clear-btn";
-    clearBtn.textContent = "取消选择";
+    clearBtn.textContent = L.batchClear;
     clearBtn.addEventListener("click", () => {
       state.selected.clear();
       render();
@@ -401,7 +409,7 @@
       if (term && !all.some((c) => c.toLowerCase() === term)) {
         const create = document.createElement("div");
         create.className = "cat-menu-item create";
-        create.textContent = "新建「" + input.value.trim() + "」";
+        create.textContent = L.createNew(input.value.trim());
         create.addEventListener("mousedown", (e) => { e.preventDefault(); commit(input.value); });
         menu.append(create);
       }
@@ -415,7 +423,7 @@
       if (!menu.children.length) {
         const empty = document.createElement("div");
         empty.className = "cat-menu-empty";
-        empty.textContent = "输入名称新建分类";
+        empty.textContent = L.menuEmpty;
         menu.append(empty);
       }
     }
@@ -441,7 +449,7 @@
     const x = document.createElement("span");
     x.className = "x";
     x.textContent = "×";
-    x.title = "移除分类";
+    x.title = L.removeCategory;
     x.addEventListener("click", () =>
       send("untag", { sid: session.sid, category: cat })
     );
@@ -453,7 +461,7 @@
     const wrap = document.createElement("span");
     wrap.className = "add-tag";
     const input = document.createElement("input");
-    input.placeholder = "+ 分类";
+    input.placeholder = L.addTagPlaceholder;
 
     const menu = document.createElement("div");
     menu.className = "cat-menu";
@@ -479,7 +487,7 @@
       if (term && !all.some((c) => c.toLowerCase() === term)) {
         const create = document.createElement("div");
         create.className = "cat-menu-item create";
-        create.textContent = "新建「" + input.value.trim() + "」";
+        create.textContent = L.createNew(input.value.trim());
         create.addEventListener("mousedown", (e) => { e.preventDefault(); commit(input.value); });
         menu.append(create);
       }
@@ -495,7 +503,7 @@
       if (!menu.children.length) {
         const empty = document.createElement("div");
         empty.className = "cat-menu-empty";
-        empty.textContent = "输入名称新建分类";
+        empty.textContent = L.menuEmpty;
         menu.append(empty);
       }
     }
@@ -572,29 +580,29 @@
     row.className = "actions";
     row.append(
       makeActionBtn(
-        "在 Claude Code 中打开",
-        "在官方 Claude Code 扩展面板恢复此会话",
+        L.openInClaude,
+        L.openInClaudeTitle,
         "primary",
         () => send("openInClaude", { sid: session.sid }),
         ICONS.claude
       ),
       makeActionBtn(
-        "终端恢复",
-        "在 IDE 终端运行 claude --resume",
+        L.resume,
+        L.resumeTitle,
         null,
         () => send("resume", { sid: session.sid, cwd: session.cwd }),
         ICONS.terminal
       ),
       makeActionBtn(
-        "打开记录",
-        "打开原始 .jsonl",
+        L.openRecord,
+        L.openRecordTitle,
         null,
         () => send("open", { path: session.path }),
         ICONS.doc
       ),
       makeActionBtn(
-        "删除",
-        "删除会话（不可恢复）",
+        L.del,
+        L.delTitle,
         "danger",
         () => send("delete", { sid: session.sid, title: session.title }),
         ICONS.trash
@@ -615,7 +623,7 @@
       const noteText = document.createElement("div");
       noteText.className = "note-text";
       noteText.textContent = currentNote;
-      noteText.title = "点击编辑备注";
+      noteText.title = L.noteEditHint;
       noteText.addEventListener("click", () => {
         startNoteEdit(wrap, session, currentNote);
       });
@@ -624,7 +632,7 @@
       // 显示低调的添加入口
       const addBtn = document.createElement("span");
       addBtn.className = "note-add";
-      addBtn.textContent = "＋ 添加备注";
+      addBtn.textContent = L.noteAdd;
       addBtn.addEventListener("click", () => {
         startNoteEdit(wrap, session, "");
       });
@@ -640,7 +648,7 @@
     textarea.className = "note-textarea";
     textarea.value = originalNote;
     textarea.rows = 2;
-    textarea.placeholder = "输入备注…";
+    textarea.placeholder = L.notePlaceholder;
 
     // cancelled 标志：Esc 取消时不触发保存
     let cancelled = false;
@@ -692,7 +700,7 @@
   function makeStarBtn(session) {
     const btn = document.createElement("button");
     btn.className = "star-btn" + (session.star ? " starred" : "");
-    btn.title = session.star ? "取消收藏" : "收藏";
+    btn.title = session.star ? L.unstar : L.star;
     btn.textContent = session.star ? "★" : "☆";
     btn.addEventListener("click", () => {
       send("toggleStar", { sid: session.sid });
@@ -704,7 +712,7 @@
   function makeSelectBox(session) {
     const label = document.createElement("label");
     label.className = "select-label";
-    label.title = "选中此会话";
+    label.title = L.selectSession;
 
     const cb = document.createElement("input");
     cb.type = "checkbox";
@@ -745,8 +753,10 @@
 
     const title = document.createElement("span");
     title.className = "card-title";
-    title.title = "在编辑器中打开原始 .jsonl";
-    applyHighlight(title, session.title, term);
+    title.title = L.titleOpenHint;
+    // 数据层对无标题会话返回中文占位符 "(无标题)"，展示时按语言映射。
+    const displayTitle = session.title === "(无标题)" ? L.untitled : session.title;
+    applyHighlight(title, displayTitle, term);
     title.addEventListener("click", () =>
       send("open", { path: session.path })
     );
@@ -789,7 +799,7 @@
     if (!visible.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = "没有匹配的会话";
+      empty.textContent = L.emptyList;
       els.list.append(empty);
       return;
     }
@@ -846,6 +856,13 @@
     state.scopeAll = els.scopeAll.checked;
     send("load");
   });
+
+  // 语言切换：通知宿主写入配置，宿主会重建整个 webview HTML 应用新语言。
+  if (els.langToggle) {
+    els.langToggle.addEventListener("click", () => {
+      send("setLang", { lang: LOCALE === "zh" ? "en" : "zh" });
+    });
+  }
 
   window.addEventListener("message", (event) => {
     const msg = event.data;

@@ -1,0 +1,9 @@
+{
+  "viewsContainers.title": "Claude Code 会话管理器",
+  "views.name": "会话管理器",
+  "command.open.title": "打开会话分类面板",
+  "config.language.description": "会话管理器面板的界面语言。`auto` 跟随 VS Code 显示语言。",
+  "config.language.auto": "跟随 VS Code 显示语言",
+  "config.language.zh": "中文",
+  "config.language.en": "英文 (English)"
+}

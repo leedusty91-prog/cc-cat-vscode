@@ -77,6 +77,29 @@ header {
 
 /* 「所有项目」复选框：复用卡片选择框的玻璃圆形样式（见下方 .select-cb 分组） */
 
+/* 语言切换按钮 */
+.lang-toggle {
+  flex-shrink: 0;
+  min-width: 32px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: border-color 0.12s ease, background 0.12s ease, opacity 0.12s ease;
+}
+
+.lang-toggle:hover {
+  opacity: 1;
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 /* ---------- layout ---------- */
 
 main {

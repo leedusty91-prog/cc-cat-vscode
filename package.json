@@ -2,7 +2,7 @@
   "name": "cc-session-manager",
   "displayName": "Claude Code Session Manager",
   "description": "Manage Claude Code sessions visually. Features: tag & categorize sessions, add notes, star favorites, search with highlight, sort, batch operations, auto-refresh on new sessions, and one-click access from the sidebar.",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "publisher": "ljx",
   "license": "MIT",
   "icon": "media/icon.png",
@@ -38,7 +38,7 @@
       "activitybar": [
         {
           "id": "ccSessionManager",
-          "title": "Claude Code Session Manager",
+          "title": "%viewsContainers.title%",
           "icon": "media/sidebar-icon.svg"
         }
       ]
@@ -47,7 +47,7 @@
       "ccSessionManager": [
         {
           "id": "ccSessionManagerView",
-          "name": "Session Manager",
+          "name": "%views.name%",
           "type": "webview"
         }
       ]
@@ -55,10 +55,30 @@
     "commands": [
       {
         "command": "ccCat.open",
-        "title": "打开会话分类面板",
+        "title": "%command.open.title%",
         "category": "Claude Code",
         "icon": "media/icon.png"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Claude Code Session Manager",
+      "properties": {
+        "ccCat.language": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "zh",
+            "en"
+          ],
+          "enumDescriptions": [
+            "%config.language.auto%",
+            "%config.language.zh%",
+            "%config.language.en%"
+          ],
+          "default": "auto",
+          "markdownDescription": "%config.language.description%"
+        }
+      }
+    }
   }
 }

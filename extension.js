@@ -6,11 +6,32 @@ const path = require("path");
 const vscode = require("vscode");
 
 const sessions = require("./sessions");
+const I18N = require("./media/i18n");
 
 let currentPanel;
+// 活动栏启动器视图引用，供语言切换时重建其 HTML。
+let currentView;
 
 // 记录 webview 最近一次 scope 状态，供文件监听自动刷新使用。
 let lastScopeAll = false;
+
+// 解析当前语言：显式设置优先，auto 时跟随 VSCode 显示语言（zh* → 中文，否则英文）。
+function resolveLocale() {
+  const pref = vscode.workspace
+    .getConfiguration("ccCat")
+    .get("language", "auto");
+  if (pref === "zh" || pref === "en") {
+    return pref;
+  }
+  return (vscode.env.language || "en").toLowerCase().startsWith("zh")
+    ? "zh"
+    : "en";
+}
+
+// 取当前语言文案对象。
+function t() {
+  return I18N[resolveLocale()] || I18N.en;
+}
 
 // 文件监听器与防抖 timer（模块级，避免泄漏）。
 let fsWatcher = null;
@@ -37,6 +58,9 @@ function htmlContent(webview, extensionUri) {
   const scriptUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, "media", "main.js")
   );
+  const i18nUri = webview.asWebviewUri(
+    vscode.Uri.joinPath(extensionUri, "media", "i18n.js")
+  );
   const styleUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, "media", "style.css")
   );
@@ -44,29 +68,33 @@ function htmlContent(webview, extensionUri) {
     vscode.Uri.joinPath(extensionUri, "media", "robot.png")
   );
   const n = nonce();
+  const locale = resolveLocale();
+  const L = t();
   return `<!DOCTYPE html>
-<html lang="zh">
+<html lang="${locale}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src 'nonce-${n}';" />
   <link href="${styleUri}" rel="stylesheet" />
-  <title>会话分类</title>
+  <title>${L.docTitle}</title>
 </head>
-<body>
+<body data-locale="${locale}">
   <header>
     <div class="brand">
       <img class="brand-icon" src="${robotUri}" width="24" height="24" alt="" />
-      Claude Code 会话
+      ${L.brand}
     </div>
-    <input id="search" type="text" placeholder="搜索标题 / 首条消息" />
-    <label class="scope"><input id="scopeAll" type="checkbox" /> 所有项目</label>
+    <input id="search" type="text" placeholder="${L.searchPlaceholder}" />
+    <label class="scope"><input id="scopeAll" type="checkbox" /> ${L.scopeAll}</label>
+    <button id="langToggle" class="lang-toggle" title="${L.langToggleTitle}">${L.langToggle}</button>
   </header>
   <main>
     <aside id="sidebar"></aside>
     <section id="list"></section>
   </main>
+  <script nonce="${n}" src="${i18nUri}"></script>
   <script nonce="${n}" src="${scriptUri}"></script>
 </body>
 </html>`;
@@ -74,7 +102,8 @@ function htmlContent(webview, extensionUri) {
 
 function postData(panel, all) {
   const data = sessions.collect(workspacePath(), all);
-  const scope = all ? "所有项目" : workspacePath() || "（未打开工作区）";
+  const L = t();
+  const scope = all ? L.scopeAll : workspacePath() || L.noWorkspace;
   panel.webview.postMessage({ type: "data", sessions: data, scope });
 }
 
@@ -99,25 +128,24 @@ async function openInClaudeCode(sid) {
     vscode.Uri.parse("vscode://anthropic.claude-code/open?session=" + sid)
   );
   if (!opened) {
-    vscode.window.showWarningMessage(
-      "未检测到 Claude Code 官方扩展，请改用「终端恢复」。"
-    );
+    vscode.window.showWarningMessage(t().noClaudeExt);
   }
 }
 
 async function confirmDelete(panel, all, sid, title) {
+  const L = t();
   const choice = await vscode.window.showWarningMessage(
-    `删除会话「${title}」？文件将移到系统回收站，可在回收站中恢复。`,
+    L.deleteConfirm(title),
     { modal: true },
-    "删除"
+    L.deleteConfirmBtn
   );
-  if (choice !== "删除") {
+  if (choice !== L.deleteConfirmBtn) {
     return;
   }
   const list = sessions.collect(workspacePath(), all);
   const session = list.find((s) => s.sid === sid);
   if (!session) {
-    vscode.window.showErrorMessage("删除失败：找不到该会话。");
+    vscode.window.showErrorMessage(L.deleteNotFound);
     return;
   }
   try {
@@ -126,7 +154,7 @@ async function confirmDelete(panel, all, sid, title) {
       useTrash: true,
     });
   } catch {
-    vscode.window.showErrorMessage("删除失败：无法删除该会话文件。");
+    vscode.window.showErrorMessage(L.deleteFailed);
     return;
   }
   // 文件已删，清理该会话的索引记录与解析缓存。
@@ -135,12 +163,13 @@ async function confirmDelete(panel, all, sid, title) {
 }
 
 async function confirmDeleteCategory(panel, all, category) {
+  const L = t();
   const choice = await vscode.window.showWarningMessage(
-    `删除分类「${category}」？将从所有会话移除该标签。`,
+    L.deleteCatConfirm(category),
     { modal: true },
-    "删除"
+    L.deleteConfirmBtn
   );
-  if (choice !== "删除") {
+  if (choice !== L.deleteConfirmBtn) {
     return;
   }
   sessions.deleteCategory(workspacePath(), all, category);
@@ -154,6 +183,12 @@ function handleMessage(panel, msg) {
 
   if (msg.type === "load") {
     postData(panel, all);
+  } else if (msg.type === "setLang") {
+    // 写入用户配置；onDidChangeConfiguration 监听会重建 webview HTML 应用新语言。
+    const target = msg.lang === "zh" ? "zh" : "en";
+    vscode.workspace
+      .getConfiguration("ccCat")
+      .update("language", target, vscode.ConfigurationTarget.Global);
   } else if (msg.type === "tag") {
     const list = sessions.collect(workspacePath(), all);
     sessions.addTag(list, msg.sid, msg.category);
@@ -259,7 +294,7 @@ function openPanel(context) {
   }
   const panel = vscode.window.createWebviewPanel(
     "ccCat",
-    "Claude Code 会话分类",
+    t().panelTitle,
     vscode.ViewColumn.One,
     {
       enableScripts: true,
@@ -290,11 +325,13 @@ function openPanel(context) {
 // 活动栏侧边视图里的启动器 HTML：机器人形象 + 打开按钮。
 function launcherHtml(webview, extensionUri) {
   const n = nonce();
+  const locale = resolveLocale();
+  const L = t();
   const robotUri = webview.asWebviewUri(
     vscode.Uri.joinPath(extensionUri, "media", "robot.png")
   );
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}">
 <head>
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
@@ -324,9 +361,9 @@ function launcherHtml(webview, extensionUri) {
 <body>
   <div class="wrap">
     <img class="robot" src="${robotUri}" alt="" />
-    <div class="title">Claude Code Session Manager</div>
-    <button class="open-btn" id="open">Open Session Manager</button>
-    <div class="desc">Tag, note, favorite, search &amp; manage your Claude Code sessions.</div>
+    <div class="title">${L.launcherTitle}</div>
+    <button class="open-btn" id="open">${L.launcherBtn}</button>
+    <div class="desc">${L.launcherDesc}</div>
   </div>
   <script nonce="${n}">
     const vscode = acquireVsCodeApi();
@@ -344,15 +381,41 @@ function activate(context) {
     vscode.commands.registerCommand("ccCat.open", () => openPanel(context))
   );
 
+  // 语言配置变化时重建两个 webview 的 HTML，即时应用新语言。
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (!e.affectsConfiguration("ccCat.language")) {
+        return;
+      }
+      if (currentPanel) {
+        currentPanel.title = t().panelTitle;
+        currentPanel.webview.html = htmlContent(
+          currentPanel.webview,
+          context.extensionUri
+        );
+      }
+      if (currentView) {
+        currentView.webview.html = launcherHtml(
+          currentView.webview,
+          context.extensionUri
+        );
+      }
+    })
+  );
+
   // 活动栏侧边视图：WebviewView 启动器。点击活动栏图标即打开主面板，
   // 关闭后仍可通过侧栏按钮随时重开。
   const provider = {
     resolveWebviewView(webviewView) {
+      currentView = webviewView;
       webviewView.webview.options = {
         enableScripts: true,
         localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "media")],
       };
       webviewView.webview.html = launcherHtml(webviewView.webview, context.extensionUri);
+      webviewView.onDidDispose(() => {
+        currentView = undefined;
+      });
       webviewView.webview.onDidReceiveMessage(
         (msg) => {
           if (msg && msg.type === "open") {

@@ -1,0 +1,9 @@
+{
+  "viewsContainers.title": "Claude Code Session Manager",
+  "views.name": "Session Manager",
+  "command.open.title": "Open Session Manager",
+  "config.language.description": "UI language for the Session Manager panel. `auto` follows the VS Code display language.",
+  "config.language.auto": "Follow VS Code display language",
+  "config.language.zh": "Chinese (中文)",
+  "config.language.en": "English"
+}
