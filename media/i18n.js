@@ -86,6 +86,8 @@
     unstar: "取消收藏",
     selectSession: "选中此会话",
     titleOpenHint: "在编辑器中打开原始 .jsonl",
+    renameSession: "重命名会话",
+    renameSessionPlaceholder: "输入会话名称，留空恢复原标题",
     emptyList: "没有匹配的会话",
     untitled: "(无标题)",
   };
@@ -166,6 +168,8 @@
     unstar: "Remove from favorites",
     selectSession: "Select this session",
     titleOpenHint: "Open the raw .jsonl in the editor",
+    renameSession: "Rename session",
+    renameSessionPlaceholder: "Session name — leave empty to restore original",
     emptyList: "No matching sessions",
     untitled: "(Untitled)",
   };

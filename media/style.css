@@ -481,8 +481,17 @@ main {
   opacity: 1;
 }
 
-.card-title {
+.card-title-wrap {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.card-title {
+  min-width: 0;
+  flex: 0 1 auto;
   font-weight: 600;
   font-size: 13.5px;
   cursor: pointer;
@@ -493,6 +502,45 @@ main {
 
 .card-title:hover {
   color: var(--accent);
+}
+
+/* 重命名会话按钮：hover 卡片时淡入 */
+.title-edit-btn {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--vscode-foreground);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s ease, color 0.1s ease;
+}
+
+.card:hover .title-edit-btn {
+  opacity: 0.55;
+}
+
+.title-edit-btn:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+/* 就地重命名输入框 */
+.title-edit-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 1px 6px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  outline: none;
 }
 
 .card-meta {

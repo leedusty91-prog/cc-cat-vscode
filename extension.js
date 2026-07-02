@@ -201,6 +201,10 @@ function handleMessage(panel, msg) {
     const list = sessions.collect(workspacePath(), all);
     sessions.setNote(list, msg.sid, msg.note);
     postData(panel, all);
+  } else if (msg.type === "setName") {
+    const list = sessions.collect(workspacePath(), all);
+    sessions.setName(list, msg.sid, msg.name);
+    postData(panel, all);
   } else if (msg.type === "toggleStar") {
     const list = sessions.collect(workspacePath(), all);
     sessions.toggleStar(list, msg.sid);

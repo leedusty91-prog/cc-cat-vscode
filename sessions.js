@@ -148,13 +148,14 @@ function getEntry(index, sid) {
   }
   if (Array.isArray(raw)) {
     // 旧格式：直接是分类数组
-    return { cats: raw, note: "", star: false };
+    return { cats: raw, note: "", star: false, name: "" };
   }
   // 新格式：确保字段齐全
   return {
     cats: Array.isArray(raw.cats) ? raw.cats : [],
     note: typeof raw.note === "string" ? raw.note : "",
     star: typeof raw.star === "boolean" ? raw.star : false,
+    name: typeof raw.name === "string" ? raw.name : "",
   };
 }
 
@@ -163,7 +164,8 @@ function setEntry(index, sid, entry) {
   const isEmpty =
     (!entry.cats || entry.cats.length === 0) &&
     (!entry.note || entry.note === "") &&
-    !entry.star;
+    !entry.star &&
+    (!entry.name || entry.name === "");
   if (isEmpty) {
     delete index[sid];
   } else {
@@ -190,8 +192,17 @@ function collect(workspacePath, scanAll) {
       try {
         const base = parseSessionCached(path.join(dir, name), dir);
         const entry = getEntry(index, base.sid);
-        // 展开成新对象，避免污染缓存里的 base（cats/note/star 来自索引，可独立变化）
-        sessions.push({ ...base, cats: entry.cats, note: entry.note, star: entry.star });
+        // 展开成新对象，避免污染缓存里的 base（cats/note/star/name 来自索引，可独立变化）。
+        // 自定义名称优先作为展示标题；originalTitle 保留 .jsonl 派生的原始标题供编辑参考。
+        sessions.push({
+          ...base,
+          title: entry.name || base.title,
+          originalTitle: base.title,
+          name: entry.name,
+          cats: entry.cats,
+          note: entry.note,
+          star: entry.star,
+        });
       } catch {
         // 跳过损坏/读取失败的会话文件
       }
@@ -256,6 +267,21 @@ function setNote(sessions, sid, note) {
   setEntry(index, sid, entry);
   saveIndex(session.projDir, index);
   return entry.note;
+}
+
+// 保存自定义会话名称：name trim 后存;空串则清除(恢复 .jsonl 原始标题)。
+// 不改动原始 .jsonl,仅存到 sidecar 索引。返回新 name 或 null(找不到)。
+function setName(sessions, sid, name) {
+  const session = sessions.find((s) => s.sid === sid);
+  if (!session) {
+    return null;
+  }
+  const index = loadIndex(session.projDir);
+  const entry = getEntry(index, sid);
+  entry.name = (name || "").trim();
+  setEntry(index, sid, entry);
+  saveIndex(session.projDir, index);
+  return entry.name;
 }
 
 // 翻转星标并持久化。返回新布尔值或 null（找不到）。
@@ -392,6 +418,7 @@ module.exports = {
   removeTag,
   forgetSession,
   setNote,
+  setName,
   toggleStar,
   batchAddTag,
   batchRemoveTag,

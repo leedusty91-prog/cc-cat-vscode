@@ -611,6 +611,59 @@
     return row;
   }
 
+  // 就地重命名会话：把标题换成输入框。留空则清除自定义名、恢复原始标题。
+  function startTitleEdit(titleEl, renameBtn, session) {
+    const input = document.createElement("input");
+    input.className = "title-edit-input";
+    input.placeholder = L.renameSessionPlaceholder;
+    // 预填当前自定义名；无自定义名时用原始标题（占位符则留空）
+    input.value =
+      session.name ||
+      (session.originalTitle && session.originalTitle !== "(无标题)"
+        ? session.originalTitle
+        : "");
+
+    let done = false; // 防 Enter 提交后 blur 再次触发
+    function finish(save) {
+      if (done) {
+        return;
+      }
+      done = true;
+      delete document.body.dataset.noteEditing;
+      if (save) {
+        const newName = input.value.trim();
+        if (newName !== (session.name || "")) {
+          pendingData = null; // 丢弃编辑期间缓冲的旧数据，等后端推新数据
+          send("setName", { sid: session.sid, name: newName });
+          return;
+        }
+      }
+      // 未保存或名称未变：恢复视图并应用编辑期间缓冲的数据
+      renderList();
+      applyPending();
+    }
+
+    // 复用备注编辑的自动刷新守卫：编辑期间暂存后端推送，不打断输入
+    input.addEventListener("focus", () => {
+      document.body.dataset.noteEditing = "1";
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finish(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        finish(false);
+      }
+    });
+    input.addEventListener("blur", () => finish(true));
+
+    renameBtn.style.display = "none";
+    titleEl.replaceWith(input);
+    input.focus();
+    input.select();
+  }
+
   // ===== 备注区 =====
   function makeNoteArea(session) {
     const wrap = document.createElement("div");
@@ -761,11 +814,26 @@
       send("open", { path: session.path })
     );
 
+    // 重命名会话按钮（hover 显示）：改名只存到 sidecar，不动原始 .jsonl。
+    const renameBtn = document.createElement("button");
+    renameBtn.className = "title-edit-btn";
+    renameBtn.textContent = "✎";
+    renameBtn.title = L.renameSession;
+    renameBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      startTitleEdit(title, renameBtn, session);
+    });
+
+    // 标题 + ✎ 包在一起，让重命名按钮紧贴会话名（而非被挤到最右）
+    const titleWrap = document.createElement("span");
+    titleWrap.className = "card-title-wrap";
+    titleWrap.append(title, renameBtn);
+
     const meta = document.createElement("span");
     meta.className = "card-meta";
     meta.textContent = session.sid.slice(0, 8) + " · " + fmtDate(session.mtime);
 
-    head.append(selectBox, starBtn, title, meta);
+    head.append(selectBox, starBtn, titleWrap, meta);
 
     // --- snippet（带高亮）---
     const snippet = document.createElement("div");
